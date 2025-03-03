@@ -54,6 +54,7 @@ function App() {
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [misspelledWords, setMisspelledWords] = useState([]);
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -90,11 +91,22 @@ function App() {
       
       setGrade(response.data.grade);
       setFeedback(response.data.feedback);
+      setMisspelledWords(response.data.misspelledWords || []);
     } catch (err) {
       console.error('Full error:', err);
       setError(`Error grading essay: ${err.response?.data?.details || err.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    try {
+      await axios.post('http://localhost:5001/api/clear-database');
+      alert('Database cleared successfully');
+    } catch (err) {
+      console.error('Error clearing database:', err);
+      alert('Error clearing database');
     }
   };
 
@@ -143,6 +155,17 @@ function App() {
               </Typography>
             </Box>
 
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={handleClearDatabase}
+                sx={{ borderRadius: 2 }}
+              >
+                Clear Database
+              </Button>
+            </Box>
+
             <Grid container spacing={3}>
               <Grid item xs={12} md={8}>
                 <FileUpload 
@@ -184,6 +207,7 @@ function App() {
               feedback={feedback}
               loading={loading}
               error={error}
+              misspelledWords={misspelledWords}
             />
           </Paper>
         </Container>

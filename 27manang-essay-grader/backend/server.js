@@ -2,10 +2,32 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
 
 dotenv.config();
 
 const app = express();
+
+// Load wordlist dictionary
+const dictionary = new Set();
+const dictionaryPath = path.join(__dirname, '../wordlist.txt');
+try {
+  console.log('Starting to load wordlist dictionary from:', dictionaryPath);
+  const dictionaryContent = fs.readFileSync(dictionaryPath, 'utf8');
+  console.log('Dictionary file read successfully, size:', dictionaryContent.length, 'bytes');
+  const lines = dictionaryContent.split('\n');
+  console.log('Split into', lines.length, 'lines');
+  lines.forEach(line => {
+    const word = line.trim().toLowerCase();
+    if (word) {
+      dictionary.add(word);
+    }
+  });
+  console.log('Successfully loaded wordlist dictionary with', dictionary.size, 'words');
+} catch (error) {
+  console.error('Error loading wordlist dictionary:', error);
+}
 
 // Define common words for spelling check
 const commonWords = new Set([
@@ -66,16 +88,65 @@ function endsWithPreposition(sentence) {
 function checkSpelling(text) {
   const words = text.toLowerCase().split(/\s+/);
   let misspelledCount = 0;
+  const misspelledWords = [];
   
   words.forEach(word => {
-    // Remove punctuation from word
-    word = word.replace(/[.,!?;:]/g, '');
-    if (word && !commonWords.has(word)) {
+    // Skip numbers
+    if (/^\d+$/.test(word)) {
+      return;
+    }
+
+    // Remove all punctuation except apostrophes
+    word = word.replace(/[.,!?;:"()\[\]{}]/g, '');
+    
+    // Handle contractions with apostrophes
+    if (word.includes("'")) {
+      // Split on apostrophe and check each part
+      const parts = word.split("'");
+      if (parts.length === 2) {
+        // Handle common contractions like "don't", "won't", "can't"
+        if (['dont', 'wont', 'cant'].includes(parts[0])) {
+          return;
+        }
+        // Handle possessive forms
+        if (parts[1] === 's' || parts[1] === 't') {
+          word = parts[0];
+        }
+      }
+    }
+    
+    // Skip empty words
+    if (!word) return;
+    
+    // Check if word is in dictionary or is a plural/ing form of a dictionary word
+    if (!dictionary.has(word) && !commonWords.has(word)) {
+      // Try removing 's' or 'es' to check if base word exists
+      const baseWord = word.replace(/(?:s|es)$/, '');
+      if (dictionary.has(baseWord)) {
+        return;
+      }
+      
+      // Try removing 'ing' to check if base word exists
+      const ingBaseWord = word.replace(/ing$/, '');
+      if (dictionary.has(ingBaseWord)) {
+        return;
+      }
+      
+      // Try removing 'ing' and adding 'e' (for words like 'making' -> 'make')
+      const ingBaseWordWithE = word.replace(/ing$/, 'e');
+      if (dictionary.has(ingBaseWordWithE)) {
+        return;
+      }
+      
       misspelledCount++;
+      misspelledWords.push(word);
     }
   });
   
-  return misspelledCount;
+  return {
+    count: misspelledCount,
+    words: misspelledWords
+  };
 }
 
 // Function to check for nasty no-nos
@@ -133,18 +204,46 @@ async function checkPlagiarism(content) {
   try {
     const previousEssays = await Essay.find({}, 'content');
     
-    // Remove common words and punctuation for comparison
+    // Clean content for comparison
     const cleanContent = content.toLowerCase()
-      .replace(/[.,!?;:]/g, '')
+      .replace(/[.,!?;:"()\[\]{}]/g, '') // Remove punctuation except apostrophes
       .split(/\s+/)
-      .filter(word => !commonWords.has(word))
+      .filter(word => {
+        // Skip numbers and empty words
+        if (/^\d+$/.test(word) || !word) return false;
+        
+        // Handle contractions and possessives
+        if (word.includes("'")) {
+          const parts = word.split("'");
+          if (parts.length === 2) {
+            if (['dont', 'wont', 'cant'].includes(parts[0])) return false;
+            if (parts[1] === 's' || parts[1] === 't') return true;
+          }
+        }
+        
+        return !commonWords.has(word);
+      })
       .join(' ');
     
     for (const essay of previousEssays) {
       const cleanEssay = essay.content.toLowerCase()
-        .replace(/[.,!?;:]/g, '')
+        .replace(/[.,!?;:"()\[\]{}]/g, '') // Remove punctuation except apostrophes
         .split(/\s+/)
-        .filter(word => !commonWords.has(word))
+        .filter(word => {
+          // Skip numbers and empty words
+          if (/^\d+$/.test(word) || !word) return false;
+          
+          // Handle contractions and possessives
+          if (word.includes("'")) {
+            const parts = word.split("'");
+            if (parts.length === 2) {
+              if (['dont', 'wont', 'cant'].includes(parts[0])) return false;
+              if (parts[1] === 's' || parts[1] === 't') return true;
+            }
+          }
+          
+          return !commonWords.has(word);
+        })
         .join(' ');
       
       // Calculate Jaccard similarity
@@ -203,8 +302,8 @@ async function gradeEssay(content) {
     }
 
     // Check spelling
-    const spellingDeductions = checkSpelling(content);
-    deductions.spellingDeductions = spellingDeductions;
+    const spellingResult = checkSpelling(content);
+    deductions.spellingDeductions = spellingResult.count;
 
     // Check nasty no-nos
     const nastyNoNos = checkNastyNoNos(content);
@@ -247,7 +346,8 @@ async function gradeEssay(content) {
       grade,
       wordCount,
       deductions,
-      plagiarismResult
+      plagiarismResult,
+      misspelledWords: spellingResult.words
     };
   } catch (error) {
     console.error('Error in gradeEssay:', error);
@@ -301,7 +401,11 @@ app.post('/api/grade', async (req, res) => {
     await essay.save();
     console.log('Essay saved to database');
 
-    res.json({ grade: gradeResult.grade, feedback });
+    res.json({ 
+      grade: gradeResult.grade, 
+      feedback,
+      misspelledWords: gradeResult.misspelledWords
+    });
   } catch (error) {
     console.error('Detailed error:', error);
     res.status(500).json({ 
@@ -311,7 +415,18 @@ app.post('/api/grade', async (req, res) => {
   }
 });
 
+// Add new route to clear database
+app.post('/api/clear-database', async (req, res) => {
+  try {
+    await Essay.deleteMany({});
+    res.json({ message: 'Database cleared successfully' });
+  } catch (error) {
+    console.error('Error clearing database:', error);
+    res.status(500).json({ error: 'Error clearing database' });
+  }
+});
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-}); 
+});

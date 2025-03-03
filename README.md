@@ -1,3 +1,2 @@
-# 27manang-essay-grader
-
-Test
+# essay-grader
+Essay Grader HarkerDev initiation proj

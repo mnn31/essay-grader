@@ -5,8 +5,7 @@ import {
   List,
   ListItem,
   ListItemIcon,
-  ListItemText,
-  Box
+  ListItemText
 } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';

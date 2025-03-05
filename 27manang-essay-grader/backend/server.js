@@ -177,18 +177,25 @@ function checkNastyNoNos(text) {
 function checkRepeatedStarters(text) {
   const sentences = splitIntoSentences(text);
   const starters = sentences.map(getFirstWord);
-  const starterCounts = {};
-  
-  starters.forEach(starter => {
-    starterCounts[starter] = (starterCounts[starter] || 0) + 1;
-  });
-  
   let totalDeductions = 0;
-  Object.values(starterCounts).forEach(count => {
-    if (count > 1) {
-      totalDeductions += (count - 1) * 3; // 3% per pair
+  const countedPairs = new Set(); // To avoid double counting
+  
+  // Check each sentence against subsequent sentences within 3 positions
+  for (let i = 0; i < sentences.length; i++) {
+    const currentStarter = starters[i];
+    
+    // Only check up to 3 sentences ahead
+    for (let j = i + 1; j < Math.min(i + 4, sentences.length); j++) {
+      if (currentStarter === starters[j]) {
+        // Create a unique key for this pair to avoid double counting
+        const pairKey = `${Math.min(i, j)}-${Math.max(i, j)}`;
+        if (!countedPairs.has(pairKey)) {
+          countedPairs.add(pairKey);
+          totalDeductions += 3; // 3% per pair
+        }
+      }
     }
-  });
+  }
   
   return totalDeductions;
 }
@@ -430,3 +437,12 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+module.exports = {
+  checkSpelling,
+  checkNastyNoNos,
+  checkRepeatedStarters,
+  checkPrepositionEndings,
+  checkPlagiarism,
+  gradeEssay
+};

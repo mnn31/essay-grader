@@ -21,12 +21,53 @@ code {
     monospace;
 }
 
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
 @keyframes bounce {
   0%, 100% {
     transform: translateY(0);
   }
   50% {
     transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -67,4 +108,111 @@ code {
 .fade-exit-active {
   opacity: 0;
   transition: opacity 200ms ease-in;
+}
+
+/* Hover effects */
+.hover-scale {
+  transition: transform 0.3s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+/* Loading animation */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Fade in animation for content */
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Floating background elements */
+.floating-icon {
+  position: fixed;
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floating-icon-1 {
+  top: 10%;
+  left: 5%;
+  animation: float 6s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+.floating-icon-2 {
+  top: 20%;
+  right: 10%;
+  animation: float 8s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.floating-icon-3 {
+  bottom: 15%;
+  left: 15%;
+  animation: float 7s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.floating-icon-4 {
+  bottom: 25%;
+  right: 20%;
+  animation: float 9s ease-in-out infinite;
+  animation-delay: 3s;
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(20px) rotate(-5deg);
+  }
+}
+
+/* Add decorative background elements */
+.background-decoration {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.decoration-element {
+  position: absolute;
+  background: linear-gradient(45deg, rgba(25, 118, 210, 0.05), rgba(245, 0, 87, 0.05));
+  border-radius: 50%;
+  animation: float-reverse 10s ease-in-out infinite;
+}
+
+.decoration-element-1 {
+  width: 300px;
+  height: 300px;
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
+}
+
+.decoration-element-2 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  right: -50px;
+  animation-delay: 2s;
+}
+
+.decoration-element-3 {
+  width: 150px;
+  height: 150px;
+  bottom: -50px;
+  left: 20%;
+  animation-delay: 4s;
 }

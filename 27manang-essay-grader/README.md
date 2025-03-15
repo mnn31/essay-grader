@@ -69,7 +69,7 @@ The backend server will run on http://localhost:5001
 
 3. Start the development server:
    ```bash
-   npm run dev
+   npm run build
    ```
 
 The frontend application will run on http://localhost:5173

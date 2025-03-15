@@ -263,6 +263,12 @@ async function checkPlagiarism(content) {
 // Essay grading function
 async function gradeEssay(content) {
   try {
+    // Initialize plagiarism result at the very top
+    let plagiarismResult = {
+      isPlagiarized: false,
+      similarity: 0
+    };
+
     // Calculate word count
     const wordCount = content.trim().split(/\s+/).length;
     console.log('Content received, length:', wordCount);
@@ -315,9 +321,9 @@ async function gradeEssay(content) {
     console.log('Grade calculated:', grade);
     console.log('Deductions:', deductions);
 
+    // Check for plagiarism
     try {
-      // Check for plagiarism
-      const plagiarismResult = await checkPlagiarism(content);
+      plagiarismResult = await checkPlagiarism(content);
       console.log('Plagiarism check result:', plagiarismResult);
       
       if (plagiarismResult.isPlagiarized) {

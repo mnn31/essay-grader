@@ -53,7 +53,7 @@ If you prefer to set up manually or if the setup script doesn't work:
    node server.js
    ```
 
-The backend server will run on http://localhost:5001
+The backend server will run on http://localhost:2020
 
 ### Frontend Setup
 
@@ -69,14 +69,14 @@ The backend server will run on http://localhost:5001
 
 3. Start the development server:
    ```bash
-   npm run build
+   npm start
    ```
 
-The frontend application will run on http://localhost:5173
+The frontend application will run on http://localhost:3000
 
 ## Usage
 
-1. Open your browser and navigate to http://localhost:5173
+1. Open your browser and navigate to http://localhost:3000
 2. Enter your essay text in the input field
 3. Click the "Grade Essay" button
 4. View your essay's grade and feedback in the results section

@@ -46,8 +46,8 @@ npm run dev &
 FRONTEND_PID=$!
 
 echo "Setup complete!"
-echo "Backend running on http://localhost:5001"
-echo "Frontend running on http://localhost:5173"
+echo "Backend running on http://localhost:2020"
+echo "Frontend running on http://localhost:3000"
 echo ""
 echo "To stop the servers, run:"
 echo "kill $BACKEND_PID $FRONTEND_PID"

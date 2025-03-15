@@ -49,6 +49,17 @@ async function initializeSpellChecker() {
 
 initializeSpellChecker();
 
+// Add common words set for plagiarism detection
+const commonWords = new Set([
+  'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you',
+  'do', 'at', 'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she', 'or', 'an', 'will', 'my', 'one',
+  'all', 'would', 'there', 'their', 'what', 'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me', 'when',
+  'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know', 'take', 'people', 'into', 'year', 'your', 'good', 'some',
+  'could', 'them', 'see', 'other', 'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over', 'think', 'also', 'back',
+  'after', 'use', 'two', 'how', 'our', 'work', 'first', 'well', 'way', 'even', 'new', 'want', 'because', 'any', 'these',
+  'give', 'day', 'most', 'us'
+]);
+
 // Helper function to count words
 function countWords(text) {
   return text.trim().split(/\s+/).length;
@@ -256,7 +267,7 @@ async function gradeEssay(content) {
     const wordCount = content.trim().split(/\s+/).length;
     console.log('Content received, length:', wordCount);
 
-    // Calculate deductions
+    // Initialize deductions object
     const deductions = {
       wordCountDeduction: 0,
       wordDeductions: 0,
@@ -304,51 +315,63 @@ async function gradeEssay(content) {
     console.log('Grade calculated:', grade);
     console.log('Deductions:', deductions);
 
-    // Check for plagiarism
-    const plagiarismResult = await checkPlagiarism(content);
-    if (plagiarismResult.isPlagiarized) {
-      grade = 0;
-      console.log('Essay detected as plagiarized, grade set to 0');
+    try {
+      // Check for plagiarism
+      const plagiarismResult = await checkPlagiarism(content);
+      console.log('Plagiarism check result:', plagiarismResult);
+      
+      if (plagiarismResult.isPlagiarized) {
+        grade = 0;
+        console.log('Essay detected as plagiarized, grade set to 0');
+      }
+    } catch (plagiarismError) {
+      console.error('Error in plagiarism check:', plagiarismError);
+      // Continue with grading even if plagiarism check fails
     }
 
     // Generate feedback
-    let feedback = 'Grade: ' + grade + '%\n\n';
-    feedback += 'Issues found:\n';
-
-    if (deductions.wordCountDeduction > 0) {
-      feedback += `Word count issue: Essay should be between 500-1000 words. Current count: ${wordCount}\n`;
-    }
-
-    if (deductions.spellingDeductions > 0) {
-      feedback += `Spelling: ${spellingResult.count} misspelled words found:\n`;
-      feedback += spellingResult.words.join(', ') + '\n';
-    }
-
-    if (deductions.wordDeductions > 0) {
-      feedback += 'Rule 1 - Nasty no-nos:\n';
-      if (nastyNoNos.veryCount > 0) feedback += `- "very" used ${nastyNoNos.veryCount} times\n`;
-      if (nastyNoNos.reallyCount > 0) feedback += `- "really" used ${nastyNoNos.reallyCount} times\n`;
-      if (nastyNoNos.getCount > 0) feedback += `- Forms of "get" used ${nastyNoNos.getCount} times\n`;
-    }
-
-    if (deductions.starterDeductions > 0) {
-      feedback += `Rule 2 - Repeated sentence starters: ${deductions.starterDeductions / 3} instances found\n`;
-    }
-
-    if (deductions.prepositionDeductions > 0) {
-      feedback += `Rule 3 - Sentences ending in prepositions: ${deductions.prepositionDeductions / 5} instances found\n`;
-    }
-
+    let feedback = '';
+    
     if (plagiarismResult.isPlagiarized) {
-      feedback += '\nPlagiarism detected! This essay appears to be copied from a previous submission.\n';
-    }
+      feedback = '⚠️ PLAGIARISM DETECTED ⚠️\n\n';
+      feedback += 'Grade: 0%\n\n';
+      feedback += `This essay has been marked as plagiarized. The content is ${Math.round(plagiarismResult.similarity)}% similar to a previously submitted essay.\n`;
+      feedback += 'Plagiarism is a serious academic offense. Please submit original work only.\n';
+    } else {
+      feedback = `Grade: ${grade}%\n\n`;
+      feedback += 'Issues found:\n';
 
-    feedback += '\nTotal deductions: ' + deductions.totalDeductions + '%';
+      if (deductions.wordCountDeduction > 0) {
+        feedback += `Word count issue: Essay should be between 500-1000 words. Current count: ${wordCount}\n`;
+      }
+
+      if (deductions.spellingDeductions > 0) {
+        feedback += `Spelling: ${spellingResult.count} misspelled words found\n`;
+      }
+
+      if (deductions.wordDeductions > 0) {
+        feedback += 'Rule 1 - Nasty no-nos:\n';
+        if (nastyNoNos.veryCount > 0) feedback += `- "very" used ${nastyNoNos.veryCount} times\n`;
+        if (nastyNoNos.reallyCount > 0) feedback += `- "really" used ${nastyNoNos.reallyCount} times\n`;
+        if (nastyNoNos.getCount > 0) feedback += `- Forms of "get" used ${nastyNoNos.getCount} times\n`;
+      }
+
+      if (deductions.starterDeductions > 0) {
+        feedback += `Rule 2 - Repeated sentence starters: ${deductions.starterDeductions / 3} instances found\n`;
+      }
+
+      if (deductions.prepositionDeductions > 0) {
+        feedback += `Rule 3 - Sentences ending in prepositions: ${deductions.prepositionDeductions / 5} instances found\n`;
+      }
+
+      feedback += '\nTotal deductions: ' + deductions.totalDeductions + '%';
+    }
 
     return {
       grade,
       feedback,
-      misspelledWords: spellingResult.words
+      misspelledWords: spellingResult.words,
+      deductions
     };
   } catch (error) {
     console.error('Error in gradeEssay:', error);

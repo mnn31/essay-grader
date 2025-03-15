@@ -5,10 +5,10 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                     Current Challenges                       │
 ├─────────────────────────────────────────────────────────────┤
-│ 1. Manual grading is time-consuming and inconsistent         │
-│ 2. Students lack immediate feedback on their writing         │
+│ 1. Manual grading is time-consuming and inconsistent        │
+│ 2. Students lack immediate feedback on their writing        │
 │ 3. Difficulty in maintaining consistent grading standards   │
-│ 4. Limited ability to track student progress over time      │
+│ 4. Need for objective evaluation of writing quality         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -18,10 +18,134 @@
 │                     System Overview                          │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐    │
-│  │   Frontend  │     │   Backend   │     │  Database   │    │
-│  │  (React)    │◄───►│  (Node.js)  │◄───►│  (MongoDB)  │    │
-│  └─────────────┘     └─────────────┘     └─────────────┘    │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐   │
+│  │   Frontend  │     │   Backend   │     │  Database   │   │
+│  │  (React)    │◄───►│  (Node.js)  │◄───►│  (MongoDB)  │   │
+│  │   + Vite    │     │  + Express  │     │            │   │
+│  └─────────────┘     └─────────────┘     └─────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Grading Criteria Implementation
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Grading Rules                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ 1. Word Count (50% max deduction)                           │
+│    └─► Less than required words: -50%                       │
+│                                                             │
+│ 2. Nasty No-Nos                                            │
+│    └─► "very": -1% each                                    │
+│    └─► "really": -1% each                                  │
+│    └─► Forms of "get": -1% each                           │
+│                                                             │
+│ 3. Sentence Starters                                        │
+│    └─► Same starter within 3 sentences: -3% per pair       │
+│    └─► No double counting of sentences                     │
+│                                                             │
+│ 4. Spelling                                                 │
+│    └─► Each misspelling: -1%                              │
+│    └─► Uses dictionary-based checking                      │
+│                                                             │
+│ 5. Preposition Endings                                      │
+│    └─► Sentences ending in prepositions: -1% each          │
+│                                                             │
+│ 6. Plagiarism Detection                                     │
+│    └─► Exact matches: Grade of 0                           │
+│    └─► Similar content detection                           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Implementation Details
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Key Components                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ Backend (server.js):                                        │
+│ ├─► Express server on port 5001                            │
+│ ├─► MongoDB connection                                     │
+│ ├─► Spell checker initialization                           │
+│ └─► Essay grading endpoints                                │
+│                                                             │
+│ Grading Functions:                                          │
+│ ├─► checkWordCount()                                       │
+│ ├─► checkNastyNoNos()                                     │
+│ ├─► checkRepeatedStarters()                               │
+│ ├─► checkSpelling()                                       │
+│ ├─► checkPrepositionEndings()                             │
+│ └─► checkPlagiarism()                                     │
+│                                                             │
+│ Frontend:                                                   │
+│ ├─► React + Vite setup                                    │
+│ ├─► Real-time essay input                                 │
+│ └─► Grade display with feedback                           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Setup and Deployment
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Setup Process                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ Prerequisites:                                              │
+│ ├─► Node.js (v14+)                                        │
+│ ├─► MongoDB                                               │
+│ └─► npm                                                   │
+│                                                             │
+│ Installation:                                               │
+│ ├─► Clone repository                                      │
+│ ├─► Run setup.sh script                                   │
+│ │   └─► Installs dependencies                            │
+│ │   └─► Starts MongoDB                                   │
+│ │   └─► Launches backend (port 5001)                     │
+│ │   └─► Launches frontend (port 5173)                    │
+│ └─► Alternative: Manual setup                             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Technical Dependencies
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Dependencies                            │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ Backend:                                                    │
+│ ├─► express: Web server framework                          │
+│ ├─► mongoose: MongoDB ODM                                  │
+│ ├─► cors: Cross-origin resource sharing                    │
+│ └─► nodehun: Spell checking                               │
+│                                                             │
+│ Frontend:                                                   │
+│ ├─► react: UI library                                     │
+│ ├─► vite: Build tool                                      │
+│ └─► axios: HTTP client                                    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Error Handling
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Error Management                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ Server-side:                                                │
+│ ├─► Port conflict detection                               │
+│ ├─► MongoDB connection errors                             │
+│ ├─► Spell checker initialization                          │
+│ └─► Essay processing errors                               │
+│                                                             │
+│ Client-side:                                                │
+│ ├─► Input validation                                      │
+│ ├─► API error handling                                    │
+│ └─► User feedback display                                 │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```

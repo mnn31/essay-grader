@@ -1,25 +1,42 @@
-# Essay Grader
+# Essay Grader Application
 
-A web application that grades essays based on specific criteria. Currently implements grading based on the use of certain words and phrases.
-
-## Features
-
-- Upload text files containing essays
-- Grade essays from -200% to 100%
-- Current grading criteria:
-  - -1% for each use of "very"
-  - -1% for each use of "really"
-  - -1% for each use of any form of "get" (get, gets, got, gotten, getting)
+An application that grades essays based on various criteria including word count, repeated sentence starters, spelling, and more.
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
-- MongoDB (running locally or a MongoDB Atlas connection string)
-- npm or yarn
+- MongoDB
+- npm (Node Package Manager)
 
-## Setup
+## Quick Start
 
-### Backend
+1. Clone the repository:
+   ```bash
+   git clone git@github.com:mnn31/essay-grader.git
+   cd essay-grader
+   ```
+
+2. Make the setup script executable:
+   ```bash
+   chmod +x setup.sh
+   ```
+
+3. Run the setup script:
+   ```bash
+   ./setup.sh
+   ```
+
+The script will:
+- Install all necessary dependencies for both frontend and backend
+- Start MongoDB if not already running
+- Start the backend server on port 5001
+- Start the frontend development server on port 5173
+
+## Manual Setup
+
+If you prefer to set up manually or if the setup script doesn't work:
+
+### Backend Setup
 
 1. Navigate to the backend directory:
    ```bash
@@ -31,18 +48,14 @@ A web application that grades essays based on specific criteria. Currently imple
    npm install
    ```
 
-3. Create a `.env` file with the following content:
-   ```
-   MONGODB_URI=mongodb://localhost:27017/essay-grader
-   PORT=5000
-   ```
-
-4. Start the backend server:
+3. Start the backend server:
    ```bash
    node server.js
    ```
 
-### Frontend
+The backend server will run on http://localhost:5001
+
+### Frontend Setup
 
 1. Navigate to the frontend directory:
    ```bash
@@ -56,26 +69,32 @@ A web application that grades essays based on specific criteria. Currently imple
 
 3. Start the development server:
    ```bash
-   npm start
+   npm run dev
    ```
+
+The frontend application will run on http://localhost:5173
 
 ## Usage
 
-1. Open your browser and navigate to `http://localhost:3000`
-2. Click the "Upload Essay" button to select a text file containing your essay
-3. The essay content will be displayed in the text area
-4. Click "Grade Essay" to receive your grade and feedback
-5. The grade and detailed feedback will be displayed below the form
+1. Open your browser and navigate to http://localhost:5173
+2. Enter your essay text in the input field
+3. Click the "Grade Essay" button
+4. View your essay's grade and feedback in the results section
 
-## Technologies Used
+## Features
 
-- Frontend:
-  - React
-  - Material-UI
-  - Axios
+- Word count analysis
+- Spelling check
+- Repeated sentence starter detection
+- Preposition ending detection
+- Plagiarism detection
+- Real-time grading and feedback
 
-- Backend:
-  - Node.js
-  - Express
-  - MongoDB
-  - Mongoose 
+## Technical Stack
+
+- Frontend: React + Vite
+- Backend: Node.js + Express
+- Database: MongoDB
+- Spell Checking: Nodehun
+- File Upload: Multer
+- Cross-Origin Resource Sharing: CORS 

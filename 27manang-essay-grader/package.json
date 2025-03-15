@@ -1,0 +1,23 @@
+{
+  "name": "essay-grader",
+  "version": "1.0.0",
+  "description": "An application that grades essays based on various criteria",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "cd backend && npm install && cd ../frontend && npm install",
+    "start-backend": "cd backend && node server.js",
+    "start-frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run start-backend\" \"npm run start-frontend\""
+  },
+  "keywords": [
+    "essay",
+    "grader",
+    "education",
+    "nlp"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 

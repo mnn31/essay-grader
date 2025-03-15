@@ -14,7 +14,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mongoose": "^8.11.0",
-    "natural": "^8.0.1"
+    "natural": "^8.0.1",
+    "nodehun": "^3.0.2"
   },
   "description": ""
 }

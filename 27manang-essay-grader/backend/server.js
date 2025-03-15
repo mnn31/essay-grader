@@ -2,46 +2,22 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
+const { Nodehun } = require('nodehun');
 
 dotenv.config();
 
 const app = express();
-
-// Load wordlist dictionary
-const dictionary = new Set();
-const dictionaryPath = path.join(__dirname, '../wordlist.txt');
-try {
-  console.log('Starting to load wordlist dictionary from:', dictionaryPath);
-  const dictionaryContent = fs.readFileSync(dictionaryPath, 'utf8');
-  console.log('Dictionary file read successfully, size:', dictionaryContent.length, 'bytes');
-  const lines = dictionaryContent.split('\n');
-  console.log('Split into', lines.length, 'lines');
-  lines.forEach(line => {
-    const word = line.trim().toLowerCase();
-    if (word) {
-      dictionary.add(word);
-    }
-  });
-  console.log('Successfully loaded wordlist dictionary with', dictionary.size, 'words');
-} catch (error) {
-  console.error('Error loading wordlist dictionary:', error);
-}
-
-// Define common words for spelling check
-const commonWords = new Set([
-  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'or', 'that', 'the', 'this', 'to', 'was', 'were', 'will', 'with',
-  'about', 'after', 'again', 'against', 'all', 'am', 'any', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'can', 'did', 'do', 'does', 'doing', 'down', 'during', 'each', 'few', 'further', 'had', 'has', 'have', 'having', 'he', 'her', 'here', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'if', 'into', 'its', 'itself', 'just', 'more', 'most', 'my', 'myself', 'no', 'nor', 'not', 'now', 'off', 'once', 'only', 'other', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 'same', 'she', 'should', 'so', 'some', 'such', 'than', 'that', 'their', 'theirs', 'them', 'themselves', 'then', 'there', 'these', 'they', 'this', 'those', 'through', 'too', 'under', 'until', 'up', 'very', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'would', 'you', 'your', 'yours', 'yourself', 'yourselves',
-  'beautiful', 'beach', 'water', 'ocean', 'swim', 'sand', 'waves', 'dolphins', 'photos', 'sunset', 'stars', 'night', 'friends', 'food', 'experience', 'memorable', 'amazing', 'activities', 'restaurants', 'people', 'crowded', 'place', 'fun', 'favorite', 'spot', 'belong', 'happy', 'treasures', 'coral', 'fish', 'seaweed', 'rocks', 'exciting', 'crystal', 'clear', 'weather', 'perfect', 'snorkeling', 'colorful', 'reefs', 'gentle', 'seashells', 'sandcastles', 'spectacular', 'bright', 'delicious', 'coastal', 'excellent', 'shoreline', 'ideal', 'walking', 'surfing', 'wonderful', 'interesting', 'peaceful', 'relaxation', 'various', 'creatures', 'formations', 'remarkable', 'memories', 'forever', 'adventure', 'incredible', 'journey', 'unforgettable', 'trip'
-]);
+const PORT = process.env.PORT || 2020;  // Allow environment variable override, default to 2020
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/essay-grader')
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/essay-grader';
+mongoose.connect(MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
@@ -50,10 +26,28 @@ const essaySchema = new mongoose.Schema({
   content: String,
   grade: Number,
   feedback: String,
-  createdAt: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now }
 });
 
 const Essay = mongoose.model('Essay', essaySchema);
+
+// Initialize Hunspell
+let nodehun;
+async function initializeSpellChecker() {
+  try {
+    // Load the en_US dictionary files from local directory
+    const affixBuffer = await fs.readFile('../dictionaries/en_US.aff');
+    const dictionaryBuffer = await fs.readFile('../dictionaries/en_US.dic');
+    nodehun = new Nodehun(affixBuffer, dictionaryBuffer);
+    console.log('Spell checker initialized successfully');
+  } catch (error) {
+    console.error('Error initializing spell checker:', error);
+    // Fallback to a simpler spell check if dictionary files aren't available
+    nodehun = null;
+  }
+}
+
+initializeSpellChecker();
 
 // Helper function to count words
 function countWords(text) {
@@ -62,18 +56,13 @@ function countWords(text) {
 
 // Helper function to split text into sentences
 function splitIntoSentences(text) {
-  // Split on sentence endings followed by space and capital letter
-  return text.split(/([.!?]+\s+[A-Z])/).reduce((acc, curr, i, arr) => {
-    if (i % 2 === 0) {
-      acc.push(curr + (arr[i + 1] || ''));
-    }
-    return acc;
-  }, []);
+  return text.match(/[^.!?]+[.!?]+/g) || [];
 }
 
 // Helper function to get first word of a sentence
 function getFirstWord(sentence) {
-  return sentence.trim().split(/\s+/)[0].toLowerCase();
+  const words = sentence.trim().split(/\s+/);
+  return words[0].toLowerCase();
 }
 
 // Helper function to check if sentence ends with preposition
@@ -84,64 +73,31 @@ function endsWithPreposition(sentence) {
   return prepositions.includes(lastWord);
 }
 
-// Helper function to check spelling
-function checkSpelling(text) {
+// Helper function to check spelling using Nodehun
+async function checkSpelling(text) {
   const words = text.toLowerCase().split(/\s+/);
   let misspelledCount = 0;
   const misspelledWords = [];
   
-  words.forEach(word => {
-    // Skip numbers
-    if (/^\d+$/.test(word)) {
-      return;
-    }
+  if (!nodehun) {
+    console.warn('Spell checker not initialized, skipping spell check');
+    return { count: 0, words: [] };
+  }
 
-    // Remove all punctuation except apostrophes
-    word = word.replace(/[.,!?;:"()\[\]{}]/g, '');
+  for (const word of words) {
+    // Skip numbers and empty words
+    if (/^\d+$/.test(word) || !word) continue;
+
+    // Remove punctuation except apostrophes
+    const cleanWord = word.replace(/[.,!?;:"()\[\]{}]/g, '');
     
-    // Handle contractions with apostrophes
-    if (word.includes("'")) {
-      // Split on apostrophe and check each part
-      const parts = word.split("'");
-      if (parts.length === 2) {
-        // Handle common contractions like "don't", "won't", "can't"
-        if (['dont', 'wont', 'cant'].includes(parts[0])) {
-          return;
-        }
-        // Handle possessive forms
-        if (parts[1] === 's' || parts[1] === 't') {
-          word = parts[0];
-        }
-      }
-    }
-    
-    // Skip empty words
-    if (!word) return;
-    
-    // Check if word is in dictionary or is a plural/ing form of a dictionary word
-    if (!dictionary.has(word) && !commonWords.has(word)) {
-      // Try removing 's' or 'es' to check if base word exists
-      const baseWord = word.replace(/(?:s|es)$/, '');
-      if (dictionary.has(baseWord)) {
-        return;
-      }
-      
-      // Try removing 'ing' to check if base word exists
-      const ingBaseWord = word.replace(/ing$/, '');
-      if (dictionary.has(ingBaseWord)) {
-        return;
-      }
-      
-      // Try removing 'ing' and adding 'e' (for words like 'making' -> 'make')
-      const ingBaseWordWithE = word.replace(/ing$/, 'e');
-      if (dictionary.has(ingBaseWordWithE)) {
-        return;
-      }
-      
+    // Check if word is spelled correctly
+    const isCorrect = await nodehun.spell(cleanWord);
+    if (!isCorrect) {
       misspelledCount++;
-      misspelledWords.push(word);
+      misspelledWords.push(cleanWord);
     }
-  });
+  }
   
   return {
     count: misspelledCount,
@@ -178,11 +134,15 @@ function checkRepeatedStarters(text) {
   const sentences = splitIntoSentences(text);
   const starters = sentences.map(getFirstWord);
   let totalDeductions = 0;
-  const countedPairs = new Set(); // To avoid double counting
+  const countedPairs = new Set(); // To avoid double counting pairs
+  const usedSentences = new Set(); // To avoid double counting sentences
   
   // Check each sentence against subsequent sentences within 3 positions
   for (let i = 0; i < sentences.length; i++) {
+    if (usedSentences.has(i)) continue; // Skip if sentence already counted
+    
     const currentStarter = starters[i];
+    let foundViolation = false;
     
     // Only check up to 3 sentences ahead
     for (let j = i + 1; j < Math.min(i + 4, sentences.length); j++) {
@@ -191,7 +151,10 @@ function checkRepeatedStarters(text) {
         const pairKey = `${Math.min(i, j)}-${Math.max(i, j)}`;
         if (!countedPairs.has(pairKey)) {
           countedPairs.add(pairKey);
+          usedSentences.add(i);
+          usedSentences.add(j);
           totalDeductions += 3; // 3% per pair
+          foundViolation = true;
         }
       }
     }
@@ -309,7 +272,7 @@ async function gradeEssay(content) {
     }
 
     // Check spelling
-    const spellingResult = checkSpelling(content);
+    const spellingResult = await checkSpelling(content);
     deductions.spellingDeductions = spellingResult.count;
 
     // Check nasty no-nos
@@ -326,34 +289,65 @@ async function gradeEssay(content) {
 
     // Calculate total deductions
     deductions.totalDeductions = 
-      deductions.wordCountDeduction +
-      deductions.wordDeductions +
-      deductions.starterDeductions +
-      deductions.prepositionDeductions +
+      deductions.wordCountDeduction + 
+      deductions.wordDeductions + 
+      deductions.starterDeductions + 
+      deductions.prepositionDeductions + 
       deductions.spellingDeductions;
 
-    // Calculate grade (100 - total deductions)
+    // Calculate final grade (100 - total deductions)
     let grade = 100 - deductions.totalDeductions;
-
-    // Cap grade at -200%
-    if (grade < -200) {
-      grade = -200;
-    }
-
-    // Check for plagiarism after calculating grade
-    const plagiarismResult = await checkPlagiarism(content);
-    if (plagiarismResult.isPlagiarized) {
-      grade = 0;
-    }
+    
+    // Cap minimum grade at -200%
+    grade = Math.max(-200, grade);
 
     console.log('Grade calculated:', grade);
     console.log('Deductions:', deductions);
 
+    // Check for plagiarism
+    const plagiarismResult = await checkPlagiarism(content);
+    if (plagiarismResult.isPlagiarized) {
+      grade = 0;
+      console.log('Essay detected as plagiarized, grade set to 0');
+    }
+
+    // Generate feedback
+    let feedback = 'Grade: ' + grade + '%\n\n';
+    feedback += 'Issues found:\n';
+
+    if (deductions.wordCountDeduction > 0) {
+      feedback += `Word count issue: Essay should be between 500-1000 words. Current count: ${wordCount}\n`;
+    }
+
+    if (deductions.spellingDeductions > 0) {
+      feedback += `Spelling: ${spellingResult.count} misspelled words found:\n`;
+      feedback += spellingResult.words.join(', ') + '\n';
+    }
+
+    if (deductions.wordDeductions > 0) {
+      feedback += 'Rule 1 - Nasty no-nos:\n';
+      if (nastyNoNos.veryCount > 0) feedback += `- "very" used ${nastyNoNos.veryCount} times\n`;
+      if (nastyNoNos.reallyCount > 0) feedback += `- "really" used ${nastyNoNos.reallyCount} times\n`;
+      if (nastyNoNos.getCount > 0) feedback += `- Forms of "get" used ${nastyNoNos.getCount} times\n`;
+    }
+
+    if (deductions.starterDeductions > 0) {
+      feedback += `Rule 2 - Repeated sentence starters: ${deductions.starterDeductions / 3} instances found\n`;
+    }
+
+    if (deductions.prepositionDeductions > 0) {
+      feedback += `Rule 3 - Sentences ending in prepositions: ${deductions.prepositionDeductions / 5} instances found\n`;
+    }
+
+    if (plagiarismResult.isPlagiarized) {
+      feedback += '\nPlagiarism detected! This essay appears to be copied from a previous submission.\n';
+    }
+
+    feedback += '\nTotal deductions: ' + deductions.totalDeductions + '%';
+
     return {
       grade,
-      wordCount,
-      deductions,
-      plagiarismResult,
+      feedback,
       misspelledWords: spellingResult.words
     };
   } catch (error) {
@@ -362,67 +356,39 @@ async function gradeEssay(content) {
   }
 }
 
-// Routes
+// Grade essay endpoint
 app.post('/api/grade', async (req, res) => {
   try {
-    console.log('Received request:', req.body);
     const { content } = req.body;
     
     if (!content) {
-      console.log('No content provided');
-      return res.status(400).json({ error: 'Essay content is required' });
+      return res.status(400).json({ error: 'No content provided' });
     }
 
     console.log('Content received, length:', content.length);
 
-    const gradeResult = await gradeEssay(content);
-    
-    const feedback = `Grade: ${gradeResult.grade}%\n\nIssues found:\n` +
-      `Rule 0 - Word count (500-1000 words):\n` +
-      `- Current word count: ${gradeResult.wordCount}\n` +
-      (gradeResult.wordCount < 500 || gradeResult.wordCount > 1000 ? `- Deducted 50% for incorrect word count\n\n` : `- Word count is within acceptable range\n\n`) +
-      `Spelling Check:\n` +
-      `- Found ${gradeResult.deductions.spellingDeductions} misspelled words\n` +
-      `- Deducted ${gradeResult.deductions.spellingDeductions}% (1% per misspelled word)\n\n` +
-      `Rule 1 - Nasty no-nos:\n` +
-      `- Found ${gradeResult.deductions.wordDeductions} nasty no-nos\n` +
-      `- Deducted ${gradeResult.deductions.wordDeductions}%\n\n` +
-      `Rule 2 - Repeated sentence starters:\n` +
-      `- Found ${gradeResult.deductions.starterDeductions} pairs of sentences starting with the same word\n` +
-      `- Deducted ${gradeResult.deductions.starterDeductions}% (3% per pair)\n\n` +
-      `Rule 3 - Sentences ending with prepositions:\n` +
-      `- Found ${gradeResult.deductions.prepositionDeductions} sentences ending with prepositions\n` +
-      `- Deducted ${gradeResult.deductions.prepositionDeductions}% (5% per sentence)\n\n` +
-      `Total deductions: ${gradeResult.deductions.totalDeductions}%\n\n` +
-      (gradeResult.grade === 0 ? `This paper was plagiarized with ${gradeResult.plagiarismResult.similarity}% certainty\n` : `This paper was not plagiarized\n`);
+    const result = await gradeEssay(content);
 
-    console.log('Grade calculated:', gradeResult.grade);
-    console.log('Deductions:', gradeResult.deductions);
-
+    // Save essay to database
     const essay = new Essay({
       content,
-      grade: gradeResult.grade,
-      feedback
+      grade: result.grade,
+      feedback: result.feedback
     });
-
     await essay.save();
     console.log('Essay saved to database');
 
-    res.json({ 
-      grade: gradeResult.grade, 
-      feedback,
-      misspelledWords: gradeResult.misspelledWords
-    });
+    res.json(result);
   } catch (error) {
     console.error('Detailed error:', error);
     res.status(500).json({ 
-      error: 'Error grading essay',
-      details: error.message
+      error: 'Error grading essay', 
+      details: error.message 
     });
   }
 });
 
-// Add new route to clear database
+// Clear database endpoint
 app.post('/api/clear-database', async (req, res) => {
   try {
     await Essay.deleteMany({});
@@ -433,7 +399,7 @@ app.post('/api/clear-database', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5001;
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

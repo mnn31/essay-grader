@@ -71,6 +71,24 @@ code {
   }
 }
 
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(20px) rotate(-5deg);
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -135,6 +153,12 @@ code {
   opacity: 0.1;
   pointer-events: none;
   z-index: 0;
+  transition: all 0.3s ease;
+}
+
+.floating-icon:hover {
+  opacity: 0.2;
+  transform: scale(1.1);
 }
 
 .floating-icon-1 {
@@ -165,13 +189,32 @@ code {
   animation-delay: 3s;
 }
 
-@keyframes float-reverse {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(20px) rotate(-5deg);
-  }
+.floating-icon-5 {
+  top: 30%;
+  left: 25%;
+  animation: float 7s ease-in-out infinite;
+  animation-delay: 4s;
+}
+
+.floating-icon-6 {
+  top: 40%;
+  right: 30%;
+  animation: float 8s ease-in-out infinite;
+  animation-delay: 5s;
+}
+
+.floating-icon-7 {
+  bottom: 35%;
+  left: 40%;
+  animation: float 9s ease-in-out infinite;
+  animation-delay: 6s;
+}
+
+.floating-icon-8 {
+  bottom: 45%;
+  right: 35%;
+  animation: float 10s ease-in-out infinite;
+  animation-delay: 7s;
 }
 
 /* Add decorative background elements */
@@ -188,9 +231,10 @@ code {
 
 .decoration-element {
   position: absolute;
-  background: linear-gradient(45deg, rgba(25, 118, 210, 0.05), rgba(245, 0, 87, 0.05));
+  background: linear-gradient(45deg, rgba(33, 150, 243, 0.05), rgba(245, 0, 87, 0.05));
   border-radius: 50%;
   animation: float-reverse 10s ease-in-out infinite;
+  filter: blur(20px);
 }
 
 .decoration-element-1 {
@@ -215,4 +259,304 @@ code {
   bottom: -50px;
   left: 20%;
   animation-delay: 4s;
+}
+
+.decoration-element-4 {
+  width: 250px;
+  height: 250px;
+  top: 30%;
+  right: -100px;
+  animation-delay: 6s;
+}
+
+.decoration-element-5 {
+  width: 180px;
+  height: 180px;
+  bottom: 30%;
+  right: 10%;
+  animation-delay: 8s;
+}
+
+/* Card hover effects */
+.MuiCard-root {
+  transition: all 0.3s ease;
+}
+
+.MuiCard-root:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Button hover effects */
+.MuiButton-root {
+  position: relative;
+  overflow: hidden;
+}
+
+.MuiButton-root::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.MuiButton-root:hover::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Icon button hover effects */
+.MuiIconButton-root {
+  transition: all 0.3s ease;
+}
+
+.MuiIconButton-root:hover {
+  transform: scale(1.1) rotate(5deg);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Dialog animations */
+.MuiDialog-paper {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Drawer animations */
+.MuiDrawer-paper {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Progress bar animations */
+.MuiLinearProgress-root {
+  transition: width 0.3s ease;
+}
+
+/* Chip hover effects */
+.MuiChip-root {
+  transition: all 0.3s ease;
+}
+
+.MuiChip-root:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Fab button animations */
+.MuiFab-root {
+  transition: all 0.3s ease;
+  animation: glow 2s infinite;
+}
+
+.MuiFab-root:hover {
+  transform: scale(1.1) rotate(5deg);
+  animation: none;
+}
+
+/* Text field focus effects */
+.MuiTextField-root .MuiOutlinedInput-root {
+  transition: all 0.3s ease;
+}
+
+.MuiTextField-root .MuiOutlinedInput-root:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Paper hover effects */
+.MuiPaper-root {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.MuiPaper-root:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced button animations */
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(33, 150, 243, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+  }
+}
+
+/* Add gradient text effect */
+.gradient-text {
+  background: linear-gradient(45deg, #2196F3, #21CBF3, #FF4081);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient 3s linear infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Add floating card effect */
+.floating-card {
+  animation: float 6s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+.floating-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+}
+
+/* Add sparkle effect */
+@keyframes sparkle {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 1;
+  }
+}
+
+.sparkle-icon {
+  animation: sparkle 3s ease-in-out infinite;
+}
+
+/* Add bounce effect for interactive elements */
+.bounce-on-hover:hover {
+  animation: bounce 1s ease infinite;
+}
+
+/* Add pulse effect for important elements */
+.pulse-on-hover:hover {
+  animation: pulse 1s ease infinite;
+}
+
+/* Add shine effect for cards */
+.shine-effect {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shine 3s infinite;
+}
+
+/* Add 3D hover effect for cards */
+.card-3d {
+  transition: transform 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+  transform: perspective(1000px) rotateX(5deg) rotateY(5deg);
+}
+
+/* Add neon glow effect */
+.neon-glow {
+  text-shadow: 0 0 5px #fff,
+               0 0 10px #fff,
+               0 0 20px #2196F3,
+               0 0 30px #2196F3,
+               0 0 40px #2196F3;
+}
+
+/* Add rainbow border animation */
+@keyframes rainbow-border {
+  0% {
+    border-color: #ff0000;
+  }
+  20% {
+    border-color: #ff8800;
+  }
+  40% {
+    border-color: #ffff00;
+  }
+  60% {
+    border-color: #00ff00;
+  }
+  80% {
+    border-color: #0000ff;
+  }
+  100% {
+    border-color: #ff0000;
+  }
+}
+
+.rainbow-border {
+  border: 2px solid;
+  animation: rainbow-border 5s linear infinite;
+}
+
+/* Add new animations for the banner */
+@keyframes bannerGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(33, 150, 243, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+  }
+}
+
+/* Add new styles for the banner */
+.MuiAppBar-root {
+  animation: bannerGlow 3s infinite;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Add new styles for the main content */
+.MuiContainer-root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Add new styles for the avatar */
+.MuiAvatar-root {
+  transition: all 0.3s ease;
+}
+
+.MuiAvatar-root:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Add new styles for the tooltips */
+.MuiTooltip-tooltip {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.MuiTooltip-tooltip:hover {
+  transform: scale(1.05);
 }
